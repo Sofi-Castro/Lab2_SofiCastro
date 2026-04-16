@@ -12,27 +12,48 @@ fi
 bash -c "$1" &
 PID_PROCESO=$!
 
+tiempo=0
+
+trap '
+echo "Se ejecutó Cntrl+C"
+kill $PID_PROCESO
+        break
+        ' SIGINT
+
 while true; do
-	ESTADO=$(ps -o stat -p $PID_PROCESO | tail -1)
+	ESTADO=$(ps -o stat -p $PID_PROCESO | tail -1 | cut -c1)
 
-	trap '
-	kill $PID_PROCESO
-	break
-	' SIGINT
-
-	cat /proc/$PID_PROCESO/cmdline > /dev/null 2>&1
-	if [ $? -eq 0 ]; then
-		break
+	if ! ps -p $PID_PROCESO > /dev/null; then
+		echo "El proceso $PID_PROCESO ya terminó."
+        	break
 	fi
 
-	if [[ "$ESTADO" == "R" -o "$ESTADO" == "S" ]]; then
-		echo "$(date) $(ps -p $PID_PROCESO -o %cpu,%mem,rss --no-header>
+
+	if [[ "$ESTADO" == "R" || "$ESTADO" == "S" ]]; then
+		echo "$tiempo $(date) $(ps -p $PID_PROCESO -o %cpu,%mem,rss --no-header)" >> monitor_$PID_PROCESO.log
                 sleep $intervalo
+		tiempo=$((tiempo + intervalo))
 	fi
 
-done#!bin/bash
+done
 
-if [ $# -ne 1]; then
-        echo "Uso: ./monitor.sh <comando> <intervalo_segundo_opcional>"
-        exit 1
-fi
+chmod 700 monitor_$PID_PROCESO.log
+cat monitor_$PID_PROCESO.log
+
+gnuplot <<  EOF
+set terminal png size 1000,600
+set output "monitor_${PID_PROCESO}.png"
+
+set title "Monitoreo de ${$1} con PID ${PID_PROCESO}"
+set xlabel "% CPU"
+set y2label "Memoria RSS (KB)"
+
+set ytics nomirror
+set y2tics
+set grid
+
+plot "monitor_$PID_PROCESO.log" using 1:3 with lines title "% CPU" axes x1y1, \
+     "monitor.log" using 1:4 with lines title "RSS KB" axes x1y2"
+EOF
+
+ 
