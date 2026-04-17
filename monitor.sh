@@ -46,7 +46,7 @@ set output "monitor_${PID_PROCESO}.png"
 
 set title "Monitoreo de $1 con PID ${PID_PROCESO}"
 set xlabel "Tiempo (s)"
-set y2label "%CPU"
+set y1label "%CPU"
 set y2label "Memoria RSS (KB)"
 
 set ytics nomirror
