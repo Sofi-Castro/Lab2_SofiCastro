@@ -30,7 +30,7 @@ while true; do
 
 
 	if [[ "$ESTADO" == "R" || "$ESTADO" == "S" ]]; then
-		echo "$tiempo $(date) $(ps -p $PID_PROCESO -o %cpu,%mem,rss --no-header)" >> monitor_$PID_PROCESO.log
+		echo "$tiempo $(ps -p $PID_PROCESO -o %cpu,%mem,rss --no-header) $(date)" >> monitor_$PID_PROCESO.log
                 sleep $intervalo
 		tiempo=$((tiempo + intervalo))
 	fi
@@ -44,7 +44,7 @@ gnuplot <<  EOF
 set terminal png size 1000,600
 set output "monitor_${PID_PROCESO}.png"
 
-set title "Monitoreo de ${$1} con PID ${PID_PROCESO}"
+set title "Monitoreo de $1 con PID ${PID_PROCESO}"
 set xlabel "% CPU"
 set y2label "Memoria RSS (KB)"
 
@@ -52,8 +52,6 @@ set ytics nomirror
 set y2tics
 set grid
 
-plot "monitor_$PID_PROCESO.log" using 1:3 with lines title "% CPU" axes x1y1, \
-     "monitor.log" using 1:4 with lines title "RSS KB" axes x1y2"
+plot "monitor_$PID_PROCESO.log" using 1:2 with lines title "% CPU" axes x1y1, "monitor_$PID_PROCESO.log" using 1:3 with lines title "RSS KB" axes x1y2
 EOF
-
  
